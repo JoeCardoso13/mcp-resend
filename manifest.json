@@ -1,28 +1,51 @@
 {
   "manifest_version": "0.4",
-  "name": "@nimblebraininc/example",
+  "name": "@joecardoso13/resend",
   "version": "0.1.0",
-  "description": "MCP server for the Example API",
+  "description": "MCP server for the Resend email API — send emails, manage contacts, and track delivery",
   "author": {
     "name": "NimbleBrain Inc"
   },
   "user_config": {
     "api_key": {
       "type": "string",
-      "title": "Example API Key",
-      "description": "Your API key from https://example.com/settings/api",
+      "title": "Resend API Key",
+      "description": "Your API key from https://resend.com/api-keys",
       "sensitive": true,
       "required": true
     }
   },
   "server": {
     "type": "python",
-    "entry_point": "mcp_example.server",
+    "entry_point": "mcp_resend.server",
     "mcp_config": {
       "command": "python",
-      "args": ["-m", "mcp_example.server"],
+      "args": ["-m", "mcp_resend.server"],
       "env": {
-        "EXAMPLE_API_KEY": "${user_config.api_key}"
+        "RESEND_API_KEY": "${user_config.api_key}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "send_email", "description": "Send an email to one or more recipients" },
+    { "name": "get_email", "description": "Get email details including delivery status" },
+    { "name": "list_emails", "description": "List sent emails with pagination" },
+    { "name": "create_contact", "description": "Create a new contact" },
+    { "name": "get_contact", "description": "Get a single contact by ID" },
+    { "name": "list_contacts", "description": "List contacts with optional segment filtering" },
+    { "name": "update_contact", "description": "Update an existing contact" },
+    { "name": "delete_contact", "description": "Remove a contact" },
+    { "name": "list_segments", "description": "List all contact segments" }
+  ],
+  "_meta": {
+    "org.mpaktrust": {
+      "mtf_version": "0.1",
+      "permissions": {
+        "network": "outbound",
+        "filesystem": "none",
+        "subprocess": "none",
+        "environment": "read",
+        "native": "none"
       }
     }
   }

@@ -1,7 +1,46 @@
 {
-  "name": "@nimblebraininc/example",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.joecardoso13/resend",
+  "title": "Resend",
+  "description": "MCP server for the Resend email API — send emails, manage contacts, and track delivery",
   "version": "0.1.0",
-  "description": "MCP server for the Example API",
-  "publisher": "nimblebraininc",
-  "repository": "https://github.com/NimbleBrainInc/mcp-example"
+  "websiteUrl": "https://github.com/JoeCardoso13",
+  "repository": {
+    "url": "https://github.com/JoeCardoso13/mcp-resend",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": [
+        "mcpb",
+        "pypi"
+      ],
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "mcp-resend",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "RESEND_API_KEY",
+          "description": "Your Resend API key from https://resend.com/api-keys",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "tool": "mcpb",
+      "version": "0.4"
+    },
+    "org.mpaktrust": {
+      "mtf_version": "0.1",
+      "permissions": {
+        "network": ["api.resend.com"],
+        "filesystem": "none",
+        "subprocess": "none"
+      }
+    }
+  }
 }

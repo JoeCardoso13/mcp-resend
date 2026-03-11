@@ -1,4 +1,4 @@
-"""Unit tests for the Example API client."""
+"""Unit tests for the Resend API client."""
 
 import os
 from unittest.mock import AsyncMock, patch
@@ -6,118 +6,149 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import pytest_asyncio
 
-from mcp_example.api_client import ExampleAPIError, ExampleClient
+from mcp_resend.api_client import ResendAPIError, ResendClient
 
 
 @pytest_asyncio.fixture
 async def mock_client():
-    """Create an ExampleClient with mocked session."""
-    client = ExampleClient(api_key="test_key")
+    """Create a ResendClient with mocked session."""
+    client = ResendClient(api_key="test_key")
     client._session = AsyncMock()
     yield client
     await client.close()
 
 
 class TestClientInitialization:
-    """Test client creation and configuration."""
-
     def test_init_with_explicit_key(self):
-        """Client accepts an explicit API key."""
-        client = ExampleClient(api_key="explicit_key")
+        client = ResendClient(api_key="explicit_key")
         assert client.api_key == "explicit_key"
 
     def test_init_with_env_var(self):
-        """Client falls back to EXAMPLE_API_KEY env var."""
-        os.environ["EXAMPLE_API_KEY"] = "env_key"
+        os.environ["RESEND_API_KEY"] = "env_key"
         try:
-            client = ExampleClient()
+            client = ResendClient()
             assert client.api_key == "env_key"
         finally:
-            del os.environ["EXAMPLE_API_KEY"]
+            del os.environ["RESEND_API_KEY"]
 
     def test_init_without_key_raises(self):
-        """Client raises ValueError when no key is available."""
         with patch.dict(os.environ, {}, clear=True):
-            os.environ.pop("EXAMPLE_API_KEY", None)
-            with pytest.raises(ValueError, match="EXAMPLE_API_KEY is required"):
-                ExampleClient()
+            os.environ.pop("RESEND_API_KEY", None)
+            with pytest.raises(ValueError, match="RESEND_API_KEY is required"):
+                ResendClient()
 
     def test_custom_timeout(self):
-        """Client accepts a custom timeout."""
-        client = ExampleClient(api_key="key", timeout=60.0)
+        client = ResendClient(api_key="key", timeout=60.0)
         assert client.timeout == 60.0
 
     @pytest.mark.asyncio
     async def test_context_manager(self):
-        """Client works as an async context manager."""
-        async with ExampleClient(api_key="test") as client:
+        async with ResendClient(api_key="test") as client:
             assert client._session is not None
         assert client._session is None
 
 
 class TestClientMethods:
-    """Test API client methods with mocked responses."""
+    @pytest.mark.asyncio
+    async def test_send_email(self, mock_client):
+        mock_response = {"id": "email_123"}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.send_email(
+                from_="sender@example.com",
+                to=["user@example.com"],
+                subject="Test",
+                html="<p>Hello</p>",
+            )
+        assert result["id"] == "email_123"
 
     @pytest.mark.asyncio
-    async def test_list_items(self, mock_client):
-        """Test list items endpoint."""
-        mock_response = {"items": [{"id": "1", "name": "Item 1"}, {"id": "2", "name": "Item 2"}]}
+    async def test_get_email(self, mock_client):
+        mock_response = {"id": "email_123", "last_event": "delivered"}
         with patch.object(mock_client, "_request", return_value=mock_response):
-            result = await mock_client.list_items(limit=10)
-        assert len(result) == 2
+            result = await mock_client.get_email("email_123")
+        assert result["id"] == "email_123"
+        assert result["last_event"] == "delivered"
 
     @pytest.mark.asyncio
-    async def test_get_item(self, mock_client):
-        """Test get item endpoint."""
-        mock_response = {"id": "1", "name": "Item 1", "description": "Test"}
+    async def test_list_emails(self, mock_client):
+        mock_response = {"object": "list", "has_more": False, "data": [{"id": "e1"}]}
         with patch.object(mock_client, "_request", return_value=mock_response):
-            result = await mock_client.get_item("1")
-        assert result["id"] == "1"
+            result = await mock_client.list_emails(limit=10)
+        assert len(result["data"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_create_contact(self, mock_client):
+        mock_response = {"object": "contact", "id": "contact_123"}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.create_contact(email="user@example.com", first_name="Jane")
+        assert result["id"] == "contact_123"
+
+    @pytest.mark.asyncio
+    async def test_list_contacts(self, mock_client):
+        mock_response = {"object": "list", "has_more": False, "data": [{"id": "c1"}]}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.list_contacts(limit=10)
+        assert len(result["data"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_list_contacts_with_segment(self, mock_client):
+        mock_response = {"object": "list", "has_more": False, "data": []}
+        with patch.object(mock_client, "_request", return_value=mock_response) as mock_req:
+            await mock_client.list_contacts(segment_id="seg_1")
+        call_args = mock_req.call_args
+        assert call_args[1]["params"]["segment_id"] == "seg_1"
+
+    @pytest.mark.asyncio
+    async def test_update_contact(self, mock_client):
+        mock_response = {"id": "c1", "object": "contact"}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.update_contact("c1", first_name="Updated")
+        assert result["id"] == "c1"
+
+    @pytest.mark.asyncio
+    async def test_delete_contact(self, mock_client):
+        mock_response = {"deleted": True}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.delete_contact("c1")
+        assert result["deleted"] is True
+
+    @pytest.mark.asyncio
+    async def test_list_segments(self, mock_client):
+        mock_response = {
+            "object": "list",
+            "has_more": False,
+            "data": [{"id": "seg_1", "name": "VIPs"}],
+        }
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.list_segments()
+        assert len(result["data"]) == 1
 
 
 class TestErrorHandling:
-    """Test error handling for API errors."""
-
     @pytest.mark.asyncio
     async def test_401_unauthorized(self, mock_client):
-        """Test handling of unauthorized errors."""
         with patch.object(
             mock_client,
             "_request",
-            side_effect=ExampleAPIError(401, "Invalid API key"),
+            side_effect=ResendAPIError(401, "Invalid API key"),
         ):
-            with pytest.raises(ExampleAPIError) as exc_info:
-                await mock_client.list_items()
+            with pytest.raises(ResendAPIError) as exc_info:
+                await mock_client.list_emails()
             assert exc_info.value.status == 401
 
     @pytest.mark.asyncio
     async def test_429_rate_limit(self, mock_client):
-        """Test handling of rate limit errors."""
         with patch.object(
             mock_client,
             "_request",
-            side_effect=ExampleAPIError(429, "Rate limit exceeded"),
+            side_effect=ResendAPIError(429, "Rate limit exceeded"),
         ):
-            with pytest.raises(ExampleAPIError) as exc_info:
-                await mock_client.list_items()
+            with pytest.raises(ResendAPIError) as exc_info:
+                await mock_client.list_emails()
             assert exc_info.value.status == 429
 
-    @pytest.mark.asyncio
-    async def test_network_error(self, mock_client):
-        """Test handling of network errors."""
-        with patch.object(
-            mock_client,
-            "_request",
-            side_effect=ExampleAPIError(500, "Network error: Connection failed"),
-        ):
-            with pytest.raises(ExampleAPIError) as exc_info:
-                await mock_client.list_items()
-            assert exc_info.value.status == 500
-            assert "Network error" in exc_info.value.message
-
     def test_error_string_representation(self):
-        """Test error string format."""
-        err = ExampleAPIError(401, "Unauthorized", {"id": "auth_error"})
+        err = ResendAPIError(401, "Unauthorized", {"id": "auth_error"})
         assert "401" in str(err)
         assert "Unauthorized" in str(err)
         assert err.details == {"id": "auth_error"}

@@ -1,65 +1,120 @@
-"""Tests for Example API models."""
+"""Tests for Resend API models."""
 
-from mcp_example.api_models import Item, ItemListResponse, Pagination
-
-
-def test_item_model() -> None:
-    """Test Item model parsing from API response."""
-    data = {
-        "id": "item_123",
-        "name": "Test Item",
-        "description": "A test item",
-        "createdAt": "2026-01-01T00:00:00Z",
-        "updatedAt": "2026-01-02T00:00:00Z",
-        "metadata": {"key": "value"},
-    }
-    item = Item(**data)
-    assert item.id == "item_123"
-    assert item.name == "Test Item"
-    assert item.created_at == "2026-01-01T00:00:00Z"
-    assert item.metadata == {"key": "value"}
+from mcp_resend.api_models import (
+    Contact,
+    ContactCreateResponse,
+    ContactListResponse,
+    Email,
+    EmailListResponse,
+    EmailSendResponse,
+    Segment,
+    SegmentListResponse,
+)
 
 
-def test_item_model_minimal() -> None:
-    """Test Item model with only required fields."""
-    item = Item(id="item_456")
-    assert item.id == "item_456"
-    assert item.name is None
-    assert item.metadata == {}
+class TestEmailModels:
+    def test_email_from_api(self) -> None:
+        data = {
+            "id": "email_123",
+            "to": ["user@example.com"],
+            "from": "sender@example.com",
+            "subject": "Hello",
+            "created_at": "2026-01-01T00:00:00Z",
+            "last_event": "delivered",
+            "html": "<p>Hi</p>",
+            "text": None,
+            "bcc": None,
+            "cc": None,
+            "reply_to": None,
+            "scheduled_at": None,
+        }
+        email = Email(**data)
+        assert email.id == "email_123"
+        assert email.from_ == "sender@example.com"
+        assert email.last_event == "delivered"
+        assert email.to == ["user@example.com"]
+
+    def test_email_minimal(self) -> None:
+        email = Email(id="e1", **{"from": "a@b.com"})
+        assert email.id == "e1"
+        assert email.last_event is None
+
+    def test_email_send_response(self) -> None:
+        resp = EmailSendResponse(id="email_456")
+        assert resp.id == "email_456"
+
+    def test_email_list_response(self) -> None:
+        data = {
+            "object": "list",
+            "has_more": True,
+            "data": [
+                {
+                    "id": "e1",
+                    "to": ["a@b.com"],
+                    "from": "s@b.com",
+                    "subject": "Hi",
+                    "created_at": "2026-01-01T00:00:00Z",
+                    "last_event": "delivered",
+                },
+            ],
+        }
+        resp = EmailListResponse(**data)
+        assert len(resp.data) == 1
+        assert resp.has_more is True
+
+    def test_email_list_response_empty(self) -> None:
+        resp = EmailListResponse()
+        assert resp.data == []
+        assert resp.has_more is False
 
 
-def test_pagination_model() -> None:
-    """Test Pagination model."""
-    data = {"nextCursor": "abc123", "hasMore": True}
-    pagination = Pagination(**data)
-    assert pagination.next_cursor == "abc123"
-    assert pagination.has_more is True
+class TestContactModels:
+    def test_contact_from_api(self) -> None:
+        data = {
+            "id": "c_123",
+            "email": "jane@example.com",
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "created_at": "2026-01-01T00:00:00Z",
+            "unsubscribed": False,
+        }
+        contact = Contact(**data)
+        assert contact.id == "c_123"
+        assert contact.email == "jane@example.com"
+        assert contact.unsubscribed is False
+
+    def test_contact_minimal(self) -> None:
+        contact = Contact(id="c_1", email="a@b.com")
+        assert contact.first_name is None
+        assert contact.unsubscribed is False
+
+    def test_contact_create_response(self) -> None:
+        resp = ContactCreateResponse(id="c_new")
+        assert resp.id == "c_new"
+        assert resp.object == "contact"
+
+    def test_contact_list_response(self) -> None:
+        data = {
+            "object": "list",
+            "has_more": False,
+            "data": [{"id": "c_1", "email": "a@b.com", "created_at": "2026-01-01T00:00:00Z"}],
+        }
+        resp = ContactListResponse(**data)
+        assert len(resp.data) == 1
 
 
-def test_pagination_defaults() -> None:
-    """Test Pagination model defaults."""
-    pagination = Pagination()
-    assert pagination.next_cursor is None
-    assert pagination.has_more is False
+class TestSegmentModels:
+    def test_segment_from_api(self) -> None:
+        seg = Segment(id="seg_1", name="VIPs", created_at="2026-01-01T00:00:00Z")
+        assert seg.id == "seg_1"
+        assert seg.name == "VIPs"
 
-
-def test_item_list_response() -> None:
-    """Test ItemListResponse model."""
-    data = {
-        "items": [
-            {"id": "1", "name": "First"},
-            {"id": "2", "name": "Second"},
-        ],
-        "pagination": {"nextCursor": "next", "hasMore": True},
-    }
-    response = ItemListResponse(**data)
-    assert len(response.items) == 2
-    assert response.items[0].id == "1"
-    assert response.pagination.has_more is True
-
-
-def test_item_list_response_empty() -> None:
-    """Test ItemListResponse with empty results."""
-    response = ItemListResponse()
-    assert response.items == []
-    assert response.pagination.has_more is False
+    def test_segment_list_response(self) -> None:
+        data = {
+            "object": "list",
+            "has_more": False,
+            "data": [{"id": "seg_1", "name": "VIPs", "created_at": "2026-01-01T00:00:00Z"}],
+        }
+        resp = SegmentListResponse(**data)
+        assert len(resp.data) == 1
+        assert resp.data[0].name == "VIPs"
