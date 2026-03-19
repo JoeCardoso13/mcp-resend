@@ -71,8 +71,8 @@ endif
 	@echo "Bumping version to $(VERSION)..."
 	@jq --arg v "$(VERSION)" '.version = $$v' manifest.json > manifest.tmp.json && mv manifest.tmp.json manifest.json
 	@if [ -f server.json ]; then jq --arg v "$(VERSION)" '.version = $$v' server.json > server.tmp.json && mv server.tmp.json server.json; fi
-	@sed -i '' 's/^version = .*/version = "$(VERSION)"/' pyproject.toml
-	@sed -i '' 's/__version__ = .*/__version__ = "$(VERSION)"/' src/mcp_resend/__init__.py
+	@sed -i 's/^version = .*/version = "$(VERSION)"/' pyproject.toml
+	@sed -i 's/__version__ = .*/__version__ = "$(VERSION)"/' src/mcp_resend/__init__.py
 	@echo "Version bumped to $(VERSION) in all files."
 
 bundle: ## Build MCPB bundle locally
