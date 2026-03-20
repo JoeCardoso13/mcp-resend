@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.4",
   "name": "@joecardoso13/resend",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server for the Resend email API — send emails, manage contacts, and track delivery",
   "author": {
     "name": "NimbleBrain Inc"

@@ -3,7 +3,7 @@
   "name": "io.joecardoso13/resend",
   "title": "Resend",
   "description": "MCP server for the Resend email API — send emails, manage contacts, and track delivery",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "websiteUrl": "https://github.com/JoeCardoso13",
   "repository": {
     "url": "https://github.com/JoeCardoso13/mcp-resend",

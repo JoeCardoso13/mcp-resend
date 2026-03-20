@@ -51,36 +51,119 @@ async def get_server_context() -> dict:
 
 
 class TestSkillLLMInvocation:
-    """Test that an LLM reads the skill and makes correct tool choices.
+    """Test that an LLM reads the skill and makes correct tool choices."""
 
-    TODO: Replace with tests specific to your server's tools and skill.
+    @pytest.mark.asyncio
+    async def test_send_email_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
 
-    Each test should:
-    1. Send a user prompt that maps to a specific tool per the SKILL.md
-    2. Assert the LLM calls the expected tool (not a similar one)
-    """
+        system = (
+            f"You are an assistant.\n\n"
+            f"## Server Instructions\n{ctx['instructions']}\n\n"
+            f"## Skill Resource\n{ctx['skill']}"
+        )
 
-    # @pytest.mark.asyncio
-    # async def test_query_selects_correct_tool(self):
-    #     """When asked to X, the LLM should call tool_name."""
-    #     ctx = await get_server_context()
-    #     client = get_anthropic_client()
-    #
-    #     system = (
-    #         f"You are an assistant.\n\n"
-    #         f"## Server Instructions\n{ctx['instructions']}\n\n"
-    #         f"## Skill Resource\n{ctx['skill']}"
-    #     )
-    #
-    #     response = client.messages.create(
-    #         model="claude-haiku-4-5-20251001",
-    #         max_tokens=1024,
-    #         system=system,
-    #         messages=[{"role": "user", "content": "Your test prompt here"}],
-    #         tools=[{"type": "custom", **t} for t in ctx["tools"]],
-    #     )
-    #
-    #     tool_calls = [b for b in response.content if b.type == "tool_use"]
-    #     assert len(tool_calls) > 0, "LLM did not call any tool"
-    #     assert tool_calls[0].name == "expected_tool_name"
-    pass
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            system=system,
+            messages=[{"role": "user", "content": "Send an email to joe@example.com saying hello"}],
+            tools=[{"type": "custom", **t} for t in ctx["tools"]],
+        )
+
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "send_email"
+
+    @pytest.mark.asyncio
+    async def test_list_emails_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+
+        system = (
+            f"You are an assistant.\n\n"
+            f"## Server Instructions\n{ctx['instructions']}\n\n"
+            f"## Skill Resource\n{ctx['skill']}"
+        )
+
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            system=system,
+            messages=[{"role": "user", "content": "Show me my sent emails"}],
+            tools=[{"type": "custom", **t} for t in ctx["tools"]],
+        )
+
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "list_emails"
+
+    @pytest.mark.asyncio
+    async def test_create_contact_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+
+        system = (
+            f"You are an assistant.\n\n"
+            f"## Server Instructions\n{ctx['instructions']}\n\n"
+            f"## Skill Resource\n{ctx['skill']}"
+        )
+
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            system=system,
+            messages=[{"role": "user", "content": "Add john@example.com to my contacts"}],
+            tools=[{"type": "custom", **t} for t in ctx["tools"]],
+        )
+
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "create_contact"
+
+    @pytest.mark.asyncio
+    async def test_list_contacts_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+
+        system = (
+            f"You are an assistant.\n\n"
+            f"## Server Instructions\n{ctx['instructions']}\n\n"
+            f"## Skill Resource\n{ctx['skill']}"
+        )
+
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            system=system,
+            messages=[{"role": "user", "content": "Show me all my contacts"}],
+            tools=[{"type": "custom", **t} for t in ctx["tools"]],
+        )
+
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "list_contacts"
+
+    @pytest.mark.asyncio
+    async def test_delete_contact_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+
+        system = (
+            f"You are an assistant.\n\n"
+            f"## Server Instructions\n{ctx['instructions']}\n\n"
+            f"## Skill Resource\n{ctx['skill']}"
+        )
+
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            system=system,
+            messages=[{"role": "user", "content": "Delete the contact with id abc123"}],
+            tools=[{"type": "custom", **t} for t in ctx["tools"]],
+        )
+
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "delete_contact"
